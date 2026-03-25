@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jabuti-users-api"
+version = "0.3.0"
+description = "CRUD de usuários com FastAPI, PostgreSQL, Redis resiliente, Alembic e Docker Compose"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0,<1.0.0",
+  "uvicorn[standard]>=0.30.0,<1.0.0",
+  "sqlalchemy>=2.0.0,<3.0.0",
+  "psycopg2-binary>=2.9.9,<3.0.0",
+  "redis>=5.0.0,<6.0.0",
+  "pydantic>=2.8.0,<3.0.0",
+  "pydantic-settings>=2.3.0,<3.0.0",
+  "email-validator>=2.2.0,<3.0.0",
+  "orjson>=3.10.0,<4.0.0",
+  "alembic>=1.13.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0,<9.0.0",
+  "httpx>=0.28.0,<1.0.0",
+  "fakeredis>=2.24.0,<3.0.0",
+  "ruff>=0.11.0,<1.0.0",
+  "mypy>=1.11.0,<2.0.0",
+]
+
+[project.scripts]
+seed-users = "app.scripts.seed:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true

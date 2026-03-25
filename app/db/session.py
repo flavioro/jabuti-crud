@@ -29,11 +29,8 @@ def get_redis() -> Redis | None:
     global _redis_client
     if _redis_client is None:
         try:
-            _redis_client = Redis(
-                host=settings.redis_host,
-                port=settings.redis_port,
-                db=settings.redis_db,
-                password=settings.redis_password,
+            _redis_client = Redis.from_url(
+                settings.redis_connection_uri,
                 decode_responses=True,
             )
             _redis_client.ping()

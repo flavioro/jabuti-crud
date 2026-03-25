@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     log_json: bool = True
     host: str = "0.0.0.0"
     port: int = 8000
-    app_version: str = "0.4.0"
+    app_version: str = "0.5.0"
     run_migrations_on_startup: bool = False
 
     postgres_server: str = "db"
@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     postgres_password: str = "jabuti"
     database_url: str | None = None
 
+    redis_url: str | None = None
     redis_host: str = "cache"
     redis_port: int = 6379
     redis_db: int = 0
@@ -47,6 +48,14 @@ class Settings(BaseSettings):
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_server}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def redis_connection_uri(self) -> str:
+        if self.redis_url:
+            return self.redis_url
+        auth = f":{self.redis_password}@" if self.redis_password else ""
+        return f"redis://{auth}{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -62,7 +62,14 @@ class UserService:
             created = self.repository.create(user=user)
         except IntegrityError as exc:
             self.repository.db.rollback()
-            LOGGER.warning("duplicate_email_on_create email=%s", payload.email)
+            LOGGER.warning(
+                "duplicate_email",
+                extra={
+                    "operation": "create_user",
+                    "email": str(payload.email),
+                    "reason": "email_already_exists",
+                },
+            )
             raise DuplicateEmailError from exc
         self.cache.invalidate_users_cache()
         return UserResponse.model_validate(created)
@@ -83,7 +90,15 @@ class UserService:
             updated = self.repository.update(user)
         except IntegrityError as exc:
             self.repository.db.rollback()
-            LOGGER.warning("duplicate_email_on_update user_id=%s", user_id)
+            LOGGER.warning(
+                "duplicate_email",
+                extra={
+                    "operation": "update_user",
+                    "user_id": str(user_id),
+                    "email": str(payload.email) if payload.email is not None else None,
+                    "reason": "email_already_exists",
+                },
+            )
             raise DuplicateEmailError from exc
         self.cache.invalidate_users_cache(user_id)
         return UserResponse.model_validate(updated)

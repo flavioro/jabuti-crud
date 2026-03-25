@@ -247,12 +247,13 @@ Itens críticos para nunca subir no repositório:
 - artefatos de build (`build/`, `dist/`, `*.egg-info/`)
 - logs e bancos locais (`*.log`, `*.db`, `*.sqlite3`)
 
-## Melhorias adicionadas nesta v4
+## Melhorias adicionadas nesta v5
 
-- logs estruturados em JSON
-- `entrypoint.sh` com `alembic upgrade head` antes da API subir
-- README reforçado com fluxo de validação e uso por agentes
-- versionamento atualizado para `0.4.0`
+- UUID gerado no banco no ambiente PostgreSQL, com fallback apenas para ambientes não-PostgreSQL de teste
+- logs de duplicidade de email mais completos e estruturados
+- `.env.example` reforçado com `DATABASE_URL` e `REDIS_URL`
+- limpeza de artefatos locais que não devem ir para o repositório
+- versão atualizada para `0.5.0`
 
 ## Próximos passos possíveis
 

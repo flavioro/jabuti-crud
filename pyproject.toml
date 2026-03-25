@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jabuti-users-api"
-version = "0.3.0"
+version = "0.4.0"
 description = "CRUD de usuários com FastAPI, PostgreSQL, Redis resiliente, Alembic e Docker Compose"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,7 @@ dependencies = [
   "email-validator>=2.2.0,<3.0.0",
   "orjson>=3.10.0,<4.0.0",
   "alembic>=1.13.0,<2.0.0",
+  "python-json-logger>=3.3.0,<4.0.0",
 ]
 
 [project.optional-dependencies]

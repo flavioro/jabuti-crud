@@ -10,10 +10,11 @@ class Settings(BaseSettings):
     debug: bool = True
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
+    log_json: bool = True
     host: str = "0.0.0.0"
     port: int = 8000
-    app_version: str = "0.3.0"
-    run_migrations_on_startup: bool = True
+    app_version: str = "0.4.0"
+    run_migrations_on_startup: bool = False
 
     postgres_server: str = "db"
     postgres_port: int = 5432

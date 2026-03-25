@@ -28,41 +28,41 @@ class CacheService:
 
     def get_json(self, key: str) -> dict[str, Any] | None:
         if self.redis_client is None:
-            LOGGER.info("cache_unavailable_read key=%s", key)
+            LOGGER.info("cache_unavailable_read", extra={"key": key})
             return None
         try:
             payload = self.redis_client.get(key)
             if payload is None:
-                LOGGER.info("cache_miss key=%s", key)
+                LOGGER.info("cache_miss", extra={"key": key})
                 return None
-            LOGGER.info("cache_hit key=%s", key)
+            LOGGER.info("cache_hit", extra={"key": key})
             return json.loads(payload)
         except (RedisError, json.JSONDecodeError, TypeError) as exc:
-            LOGGER.warning("cache_read_failed key=%s error=%s", key, exc)
+            LOGGER.warning("cache_read_failed", extra={"key": key, "error": str(exc)})
             return None
 
     def set_json(self, key: str, value: dict[str, Any]) -> None:
         if self.redis_client is None:
-            LOGGER.info("cache_unavailable_write key=%s", key)
+            LOGGER.info("cache_unavailable_write", extra={"key": key})
             return
         try:
             self.redis_client.setex(key, self.ttl_seconds, json.dumps(value, default=str))
-            LOGGER.info("cache_set key=%s", key)
+            LOGGER.info("cache_set", extra={"key": key})
         except RedisError as exc:
-            LOGGER.warning("cache_write_failed key=%s error=%s", key, exc)
+            LOGGER.warning("cache_write_failed", extra={"key": key, "error": str(exc)})
 
     def invalidate_pattern(self, pattern: str) -> int:
         if self.redis_client is None:
-            LOGGER.info("cache_unavailable_invalidate pattern=%s", pattern)
+            LOGGER.info("cache_unavailable_invalidate", extra={"pattern": pattern})
             return 0
         try:
             deleted = 0
             for key in self.redis_client.scan_iter(match=pattern):
                 deleted += int(self.redis_client.delete(key))
-            LOGGER.info("cache_invalidate pattern=%s deleted=%s", pattern, deleted)
+            LOGGER.info("cache_invalidate", extra={"pattern": pattern, "deleted": deleted})
             return deleted
         except RedisError as exc:
-            LOGGER.warning("cache_invalidate_failed pattern=%s error=%s", pattern, exc)
+            LOGGER.warning("cache_invalidate_failed", extra={"pattern": pattern, "error": str(exc)})
             return 0
 
     def invalidate_list_cache(self) -> int:

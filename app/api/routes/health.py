@@ -30,7 +30,7 @@ def healthcheck(
         try:
             redis_client.ping()
         except RedisError as exc:
-            LOGGER.warning("health_cache_unavailable error=%s", exc)
+            LOGGER.warning("health_cache_unavailable", extra={"error": str(exc)})
             cache_status = "unavailable"
 
     status = "ok" if cache_status == "ok" else "degraded"

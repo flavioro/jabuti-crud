@@ -16,7 +16,7 @@ from app.db.migrations import run_migrations
 from app.db.session import close_redis, engine, get_redis
 
 settings = get_settings()
-configure_logging(settings.log_level)
+configure_logging(settings.log_level, settings.log_json)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -29,16 +29,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         redis_client = get_redis()
         app.state.redis = redis_client
         if redis_client is None:
-            LOGGER.warning("application_started_without_cache environment=%s", settings.environment)
+            LOGGER.warning("application_started_without_cache", extra={"environment": settings.environment})
 
-    LOGGER.info("application_started environment=%s", settings.environment)
+    LOGGER.info("application_started", extra={"environment": settings.environment})
     try:
         yield
     finally:
         if settings.environment != "test":
             close_redis()
             engine.dispose()
-        LOGGER.info("application_stopped environment=%s", settings.environment)
+        LOGGER.info("application_stopped", extra={"environment": settings.environment})
 
 
 app = FastAPI(
@@ -70,13 +70,15 @@ async def log_requests(
 ) -> Response:
     started_at = time.perf_counter()
     response = await call_next(request)
-    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
     LOGGER.info(
-        "request_completed method=%s path=%s status_code=%s duration_ms=%.2f",
-        request.method,
-        request.url.path,
-        response.status_code,
-        elapsed_ms,
+        "request_completed",
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": elapsed_ms,
+        },
     )
     return response
 

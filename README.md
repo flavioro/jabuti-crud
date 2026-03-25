@@ -1,6 +1,6 @@
 # Jabuti Users API
 
-Projeto completo para o desafio técnico da Jabuti AGI: uma API CRUD de usuários com **FastAPI**, **PostgreSQL**, **Redis como cache**, **Alembic para migrations**, **logs**, **Swagger/OpenAPI automático** e execução com **Docker Compose**.
+Projeto completo para o desafio técnico da Jabuti AGI: uma API CRUD de usuários com **FastAPI**, **PostgreSQL**, **Redis como cache**, **Alembic para migrations**, **logs estruturados em JSON**, **Swagger/OpenAPI automático** e execução com **Docker Compose**.
 
 ## O que este projeto entrega
 
@@ -8,20 +8,13 @@ Projeto completo para o desafio técnico da Jabuti AGI: uma API CRUD de usuário
 - CRUD completo de usuários
 - campos `id`, `nome`, `email` único e `idade`
 - paginação em `GET /usuarios`
-- cache Redis em:
-  - `GET /usuarios`
-  - `GET /usuarios/{id}`
-- invalidação do cache em:
-  - `POST /usuarios`
-  - `PUT /usuarios/{id}`
-  - `DELETE /usuarios/{id}`
+- cache Redis em `GET /usuarios` e `GET /usuarios/{id}`
+- invalidação de cache em `POST`, `PUT` e `DELETE`
 - PostgreSQL como persistência principal
 - migrations com Alembic
-- logs de request e de cache
+- logs estruturados em JSON
 - graceful shutdown com fechamento de conexões do Redis e descarte do engine SQLAlchemy
-- documentação automática em:
-  - `/docs` (Swagger UI)
-  - `/redoc`
+- documentação automática em `/docs` e `/redoc`
 - testes automatizados
 - seed opcional para popular o banco
 - execução local com Docker Compose (`app + db + cache`)
@@ -29,15 +22,15 @@ Projeto completo para o desafio técnico da Jabuti AGI: uma API CRUD de usuário
 
 ## Validação rápida para o avaliador
 
-Para facilitar a conferência do desafio, os pontos abaixo estão visíveis e testáveis rapidamente:
+Os pontos abaixo podem ser confirmados em poucos minutos:
 
+- **Subida com um único comando**: `docker compose up --build`
 - **Swagger/OpenAPI automático** em `/docs` e `/redoc`
 - **Healthcheck** em `/api/v1/health`
 - **Email com unicidade real no banco** via migration Alembic e `UniqueConstraint`
 - **Redis resiliente**: se o cache falhar, o CRUD continua funcionando e a API entra em estado `degraded`, sem quebrar com erro 500
-- **Invalidação de cache paginado**: as chaves `users:list:*` são invalidadas em `POST`, `PUT` e `DELETE`
-- **Migrations versionadas** com Alembic
-- **Seed opcional** para gerar massa de teste rapidamente
+- **Invalidação de cache paginado**: as chaves `users:list:*` são invalidadas em `POST`, `PUT` e `DELETE`; em `PUT` e `DELETE`, `users:detail:{id}` também é invalidado
+- **Migrations automáticas no container** antes da API subir
 - **Docker Compose com healthcheck** para `app`, `db` e `cache`
 - **Testes automatizados**, incluindo cenário com falha do Redis
 
@@ -62,6 +55,7 @@ jabuti-crud/
 ├── alembic.ini                  # Configuração do Alembic
 ├── Dockerfile                   # Imagem da API
 ├── docker-compose.yml           # App + Postgres + Redis
+├── entrypoint.sh                # Migrações automáticas + start da API
 ├── Makefile                     # Comandos úteis
 ├── pyproject.toml               # Dependências e tooling
 ├── render.yaml                  # Deploy opcional no Render
@@ -75,7 +69,8 @@ jabuti-crud/
 - **Alembic** para migrations
 - **PostgreSQL** como banco relacional
 - **Redis** para cache
-- **Pydantic 2** para validação
+- **Pydantic 2 + pydantic-settings** para validação e configuração
+- **python-json-logger** para logs em JSON
 - **Pytest** para testes
 - **Docker Compose** para rodar a aplicação multi-container
 
@@ -92,6 +87,12 @@ Ao criar, atualizar ou excluir usuários, o projeto invalida as chaves `users:li
 
 ### 4. Swagger como ponto de validação
 O FastAPI gera automaticamente a documentação interativa, facilitando a inspeção dos contratos de request/response sem depender de ferramenta externa.
+
+### 5. Logs em JSON
+Os logs foram formatados em JSON para facilitar ingestão por ferramentas de observabilidade e leitura em pipelines de execução.
+
+### 6. Migrations automáticas no container
+O `entrypoint.sh` executa `alembic upgrade head` antes do `uvicorn`, reduzindo atrito para o avaliador no fluxo com Docker.
 
 ## Variáveis de ambiente
 
@@ -122,11 +123,27 @@ curl http://localhost:8000/api/v1/health
 ```
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/usuarios   -H "Content-Type: application/json"   -d '{"nome":"Flavio Rodrigues","email":"flavio@example.com","idade":30}'
+curl -X POST http://localhost:8000/api/v1/usuarios \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Flavio Rodrigues","email":"flavio@example.com","idade":30}'
 ```
 
 ```bash
 curl "http://localhost:8000/api/v1/usuarios?limit=10&offset=0"
+```
+
+## Como rodar os testes
+
+Localmente:
+
+```bash
+pytest -q
+```
+
+Dentro do container da aplicação:
+
+```bash
+docker compose exec app pytest -q
 ```
 
 ## Como rodar sem Docker
@@ -143,7 +160,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 No Windows:
 
 ```powershell
-.venv\Scriptsctivate
+.venv\Scripts\activate
 ```
 
 ## Migrations
@@ -190,11 +207,25 @@ O FastAPI gera automaticamente a documentação interativa da API.
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## Testes
+## Observabilidade
 
-```bash
-pytest -q
+Exemplo de log no formato JSON:
+
+```json
+{"timestamp": "2026-03-25 12:00:00,000", "level": "INFO", "logger": "app.main", "message": "request_completed", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 4.31, "service": "jabuti-users-api"}
 ```
+
+## Como esta API pode ser consumida por agentes
+
+Mesmo sendo um CRUD simples, esta API foi organizada de forma útil para cenários com agentes e automações:
+
+- **contratos claros** via OpenAPI, facilitando integração automática
+- **erros previsíveis** como `404` e `409`, úteis para retry e branching
+- **healthcheck** para orquestradores e agentes verificarem disponibilidade
+- **cache resiliente**, evitando indisponibilidade total quando o Redis falha
+- **logs estruturados**, úteis para auditoria e diagnóstico de fluxos automatizados
+
+## Testes
 
 Cobertura validada nesta versão:
 
@@ -216,18 +247,16 @@ Itens críticos para nunca subir no repositório:
 - artefatos de build (`build/`, `dist/`, `*.egg-info/`)
 - logs e bancos locais (`*.log`, `*.db`, `*.sqlite3`)
 
-## Melhorias adicionadas nesta v3
+## Melhorias adicionadas nesta v4
 
-- Redis resiliente com fallback silencioso para o banco
-- healthcheck degradado quando o cache estiver indisponível
-- testes cobrindo indisponibilidade do Redis
-- README reforçado para validação rápida do avaliador
-- versionamento atualizado para `0.3.0`
+- logs estruturados em JSON
+- `entrypoint.sh` com `alembic upgrade head` antes da API subir
+- README reforçado com fluxo de validação e uso por agentes
+- versionamento atualizado para `0.4.0`
 
 ## Próximos passos possíveis
 
 - GitHub Actions para CI
-- logs em JSON
 - coverage report
 - endpoint `/ready` separado de `/health`
 - deploy opcional no Render usando `render.yaml`

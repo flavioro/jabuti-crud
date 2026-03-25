@@ -38,7 +38,7 @@ def get_redis() -> Redis | None:
             )
             _redis_client.ping()
         except RedisError as exc:
-            LOGGER.warning("redis_unavailable error=%s", exc)
+            LOGGER.warning("redis_unavailable", extra={"error": str(exc)})
             _redis_client = None
     return _redis_client
 

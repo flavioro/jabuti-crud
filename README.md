@@ -41,7 +41,6 @@ docker compose exec app pytest -q
 - testes automatizados
 - seed opcional para popular o banco
 - execução local com Docker Compose (`app + db + cache`)
-- `render.yaml` opcional para deploy por recursos separados no Render
 
 ## Validação rápida para o avaliador
 
@@ -91,7 +90,6 @@ jabuti-crud/
 ├── entrypoint.sh                # Migrações automáticas + start da API
 ├── Makefile                     # Comandos úteis
 ├── pyproject.toml               # Dependências e tooling
-├── render.yaml                  # Deploy opcional no Render
 └── README.md
 ```
 
@@ -336,4 +334,3 @@ O repositório ignora arquivos e diretórios que não devem ser versionados, com
 - tipagem estática com MyPy
 - cobertura de testes com relatório
 - métricas e tracing além de logs
-- deploy opcional no Render com recursos separados
